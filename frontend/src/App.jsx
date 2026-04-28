@@ -6,10 +6,14 @@ import { NotificationProvider } from './context/NotificationContext';
 import { AnimatePresence, motion } from 'framer-motion';
 import AppRoutes from './routes/AppRoutes';
 import SplashScreen from './components/ui/SplashScreen';
+import useSwipeNavigation from './hooks/useSwipeNavigation';
 
 const AppContent = () => {
   const { loading: authLoading } = useAuth();
   const [showSplash, setShowSplash] = useState(true);
+
+  // Enable universal left-to-right swipe to go back
+  useSwipeNavigation();
 
   useEffect(() => {
     // Keep splash screen visible for at least 2 seconds
