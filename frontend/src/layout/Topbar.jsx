@@ -6,12 +6,29 @@ import { useAuth } from '../context/AuthContext';
 const Topbar = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { logout, currentUser } = useAuth();
+  const { logout, currentUser, userData } = useAuth();
   
   // Convert path to title
   const getPageTitle = () => {
-    const path = location.pathname.split('/')[1];
+    const segments = location.pathname.split('/');
+    const path = segments[1];
+    const subPath = segments[2];
+    
     if (!path) return 'Dashboard';
+    
+    if (path === 'admin') {
+      if (!subPath) return 'Admin Overview';
+      const adminMap = {
+        'users': 'User Management',
+        'buildings': 'Global Buildings',
+        'payments': 'Global Payments',
+        'units': 'Global Units',
+        'tenants': 'Global Tenants',
+        'bills': 'Global Bills & Taxes'
+      };
+      return adminMap[subPath] || 'Admin Dashboard';
+    }
+
     const titleMap = {
       'buildings': 'Properties',
       'units': 'Units',
@@ -58,7 +75,7 @@ const Topbar = () => {
         <div className="flex items-center gap-2 md:gap-3">
           {/* User Profile */}
           <div className="flex items-center gap-2 px-1 py-1 md:px-2 md:py-1.5 rounded-xl hover:bg-gray-50 transition-colors cursor-pointer group">
-            <div className="w-9 h-9 md:w-10 md:h-10 rounded-full bg-gradient-to-tr from-blue-500 to-indigo-600 flex items-center justify-center text-white font-black text-sm shadow-lg shadow-blue-600/10 border-2 border-white">
+            <div className={`w-9 h-9 md:w-10 md:h-10 rounded-full bg-gradient-to-tr ${userData?.role === 'admin' ? 'from-amber-500 to-orange-600' : 'from-blue-500 to-indigo-600'} flex items-center justify-center text-white font-black text-sm shadow-lg shadow-blue-600/10 border-2 border-white`}>
               {currentUser?.photoURL ? (
                 <img src={currentUser.photoURL} alt="Avatar" className="w-full h-full rounded-full object-cover" />
               ) : (
@@ -69,7 +86,9 @@ const Topbar = () => {
               <span className="text-sm font-black text-gray-900">
                 {currentUser?.displayName || currentUser?.email?.split('@')[0]}
               </span>
-              <span className="text-[10px] text-gray-400 font-black uppercase tracking-widest">Manager</span>
+              <span className="text-[10px] text-gray-400 font-black uppercase tracking-widest">
+                {userData?.role === 'admin' ? 'Administrator' : 'Manager'}
+              </span>
             </div>
           </div>
 

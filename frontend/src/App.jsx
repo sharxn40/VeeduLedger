@@ -9,7 +9,7 @@ import SplashScreen from './components/ui/SplashScreen';
 import useSwipeNavigation from './hooks/useSwipeNavigation';
 
 const AppContent = () => {
-  const { loading: authLoading } = useAuth();
+  const { loading: authLoading, currentUser } = useAuth();
   const [showSplash, setShowSplash] = useState(true);
 
   // Enable universal left-to-right swipe to go back
@@ -25,9 +25,9 @@ const AppContent = () => {
 
   const isLoading = authLoading || showSplash;
 
-  return (
-    <AnimatePresence mode="wait">
-      {isLoading ? (
+  if (isLoading) {
+    return (
+      <AnimatePresence mode="wait">
         <motion.div
           key="splash"
           exit={{ opacity: 0, scale: 1.05 }}
@@ -35,18 +35,11 @@ const AppContent = () => {
         >
           <SplashScreen />
         </motion.div>
-      ) : (
-        <motion.div
-          key="app"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.5 }}
-        >
-          <AppRoutes />
-        </motion.div>
-      )}
-    </AnimatePresence>
-  );
+      </AnimatePresence>
+    );
+  }
+
+  return <AppRoutes />;
 };
 
 function App() {

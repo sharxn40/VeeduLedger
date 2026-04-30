@@ -9,7 +9,7 @@ import {
   sendPasswordResetEmail 
 } from 'firebase/auth';
 import { auth, db } from '../services/firebase';
-import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { doc, setDoc, getDoc, serverTimestamp } from 'firebase/firestore';
 
 const AuthContext = createContext();
 
@@ -17,15 +17,16 @@ export const useAuth = () => useContext(AuthContext);
 
 export const AuthProvider = ({ children }) => {
   const [currentUser, setCurrentUser] = useState(null);
+  const [userData, setUserData] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  const signup = async (email, password) => {
+  const signup = async (email, password, role = 'owner') => {
     const userCredential = await createUserWithEmailAndPassword(auth, email, password);
     const user = userCredential.user;
 
-    // Create user document in "owners" collection
-    await setDoc(doc(db, "owners", user.uid), {
+    await setDoc(doc(db, "users", user.uid), {
       email: user.email,
+      role: role,
       createdAt: serverTimestamp()
     });
 
@@ -37,6 +38,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   const logout = () => {
+    setUserData(null);
     return signOut(auth);
   };
 
@@ -45,11 +47,20 @@ export const AuthProvider = ({ children }) => {
     const userCredential = await signInWithPopup(auth, provider);
     const user = userCredential.user;
 
-    // Create/Update user document in "owners" collection
-    await setDoc(doc(db, "owners", user.uid), {
-      email: user.email,
-      lastLogin: serverTimestamp()
-    }, { merge: true });
+    const userDoc = await getDoc(doc(db, "users", user.uid));
+    
+    if (!userDoc.exists()) {
+      await setDoc(doc(db, "users", user.uid), {
+        email: user.email,
+        role: 'owner',
+        createdAt: serverTimestamp(),
+        lastLogin: serverTimestamp()
+      });
+    } else {
+      await setDoc(doc(db, "users", user.uid), {
+        lastLogin: serverTimestamp()
+      }, { merge: true });
+    }
 
     return userCredential;
   };
@@ -59,9 +70,26 @@ export const AuthProvider = ({ children }) => {
   };
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      setCurrentUser(user);
-      setLoading(false);
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      try {
+        setCurrentUser(user);
+        if (user) {
+          const userDoc = await getDoc(doc(db, "users", user.uid));
+          if (userDoc.exists()) {
+            setUserData(userDoc.data());
+          } else {
+            // Default for new/missing profiles
+            setUserData({ role: 'owner' });
+          }
+        } else {
+          setUserData(null);
+        }
+      } catch (error) {
+        console.error("Auth error:", error);
+        setUserData(null);
+      } finally {
+        setLoading(false);
+      }
     });
 
     return unsubscribe;
@@ -69,6 +97,7 @@ export const AuthProvider = ({ children }) => {
 
   const value = {
     currentUser,
+    userData,
     signup,
     login,
     loginWithGoogle,

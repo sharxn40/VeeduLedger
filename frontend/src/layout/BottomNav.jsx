@@ -1,12 +1,13 @@
 import React, { useEffect, useRef } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 import { 
   LayoutDashboard, 
   Building2, 
   Layers, 
   Users, 
-  CreditCard,
-  FileText,
+  CreditCard, 
+  FileText, 
   Receipt,
   LayoutGrid,
   Settings
@@ -15,8 +16,9 @@ import {
 const BottomNav = () => {
   const containerRef = useRef(null);
   const location = useLocation();
+  const { userData } = useAuth();
 
-  const navItems = [
+  const ownerNavItems = [
     { name: 'Home', path: '/dashboard', icon: LayoutDashboard },
     { name: 'Properties', path: '/buildings', icon: Building2 },
     { name: 'Units', path: '/units', icon: Layers },
@@ -27,6 +29,15 @@ const BottomNav = () => {
     { name: 'Layout', path: '/layout', icon: LayoutGrid },
     { name: 'Settings', path: '/settings', icon: Settings },
   ];
+
+  const tenantNavItems = [
+    { name: 'Home', path: '/tenant', icon: LayoutDashboard },
+    { name: 'Rent', path: '/tenant/payments', icon: CreditCard },
+    { name: 'Bills', path: '/tenant/bills', icon: FileText },
+    { name: 'Settings', path: '/tenant/settings', icon: Settings },
+  ];
+
+  const navItems = userData?.role === 'tenant' ? tenantNavItems : ownerNavItems;
 
   useEffect(() => {
     // Ensure the DOM has updated before scrolling
